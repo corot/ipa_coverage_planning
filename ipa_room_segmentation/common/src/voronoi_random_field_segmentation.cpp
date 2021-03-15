@@ -486,7 +486,7 @@ void VoronoiRandomFieldSegmentation::trainBoostClassifiers(const std::vector<cv:
 	std::cout << "starting to train the Boost Classifiers." << std::endl;
 
 	// vectors that store the given labels and features for each point (order: room-hallway-doorway)
-	std::vector< std::vector<float> > labels_for_classes(number_of_classes_);
+	std::vector< std::vector<int> > labels_for_classes(number_of_classes_);
 	std::vector< std::vector<double> > features_for_points;
 
 	// go trough each found clique and take the first point of the clique as current point
@@ -525,9 +525,9 @@ void VoronoiRandomFieldSegmentation::trainBoostClassifiers(const std::vector<cv:
 			for(size_t current_class = 0; current_class < number_of_classes_; ++current_class)
 			{
 				if(current_labels_for_points[0] == possible_labels[current_class])
-					labels_for_classes[current_class].push_back(1.0);
+					labels_for_classes[current_class].push_back(1);
 				else
-					labels_for_classes[current_class].push_back(-1.0);
+					labels_for_classes[current_class].push_back(-1);
 			}
 		}
 	}
@@ -538,11 +538,11 @@ void VoronoiRandomFieldSegmentation::trainBoostClassifiers(const std::vector<cv:
 	//
 	//*************room***************
 	//save the found labels and features in Matrices
-	cv::Mat room_labels_Mat(labels_for_classes[0].size(), 1, CV_32FC1);
+	cv::Mat room_labels_Mat(labels_for_classes[0].size(), 1, CV_32SC1);
 	cv::Mat features_Mat(features_for_points.size(), vrf_feature_computer.getFeatureCount(), CV_32FC1);
 	for (int i = 0; i < labels_for_classes[0].size(); i++)
 	{
-		room_labels_Mat.at<float>(i, 0) = labels_for_classes[0][i];
+		room_labels_Mat.at<int>(i, 0) = labels_for_classes[0][i];
 		for (int f = 0; f < vrf_feature_computer.getFeatureCount(); f++)
 		{
 			features_Mat.at<float>(i, f) = (float) features_for_points[i][f];
@@ -556,7 +556,7 @@ void VoronoiRandomFieldSegmentation::trainBoostClassifiers(const std::vector<cv:
 	room_boost_.save(filename_room.c_str(), "boost");
 #else
 	// Train a boost classifier
-	room_boost_->create();
+	room_boost_ = cv::ml::Boost::create();
 	room_boost_->setBoostType(cv::ml::Boost::DISCRETE);
 	room_boost_->setWeakCount(number_of_classifiers_);
 	room_boost_->setWeightTrimRate(0);
@@ -571,7 +571,7 @@ void VoronoiRandomFieldSegmentation::trainBoostClassifiers(const std::vector<cv:
 	//
 	//*************hallway***************
 	//save the found labels and features in Matrices
-	cv::Mat hallway_labels_Mat(labels_for_classes[1].size(), 1, CV_32FC1);
+	cv::Mat hallway_labels_Mat(labels_for_classes[1].size(), 1, CV_32SC1);
 	for (int i = 0; i < labels_for_classes[1].size(); i++)
 		hallway_labels_Mat.at<float>(i, 0) = labels_for_classes[1][i];
 	std::string filename_hallway = classifier_storage_path + "vrf_hallway_boost.xml";
@@ -582,7 +582,7 @@ void VoronoiRandomFieldSegmentation::trainBoostClassifiers(const std::vector<cv:
 	hallway_boost_.save(filename_hallway.c_str(), "boost");
 #else
 	// Train a boost classifier
-	hallway_boost_->create();
+	hallway_boost_ = cv::ml::Boost::create();
 	hallway_boost_->setBoostType(cv::ml::Boost::DISCRETE);
 	hallway_boost_->setWeakCount(number_of_classifiers_);
 	hallway_boost_->setWeightTrimRate(0);
@@ -597,7 +597,7 @@ void VoronoiRandomFieldSegmentation::trainBoostClassifiers(const std::vector<cv:
 	//
 	//*************doorway***************
 	//save the found labels and features in Matrices
-	cv::Mat doorway_labels_Mat(labels_for_classes[2].size(), 1, CV_32FC1);
+	cv::Mat doorway_labels_Mat(labels_for_classes[2].size(), 1, CV_32SC1);
 	for (int i = 0; i < labels_for_classes[2].size(); i++)
 		doorway_labels_Mat.at<float>(i, 0) = labels_for_classes[2][i];
 	std::string filename_doorway = classifier_storage_path + "vrf_doorway_boost.xml";
@@ -608,7 +608,7 @@ void VoronoiRandomFieldSegmentation::trainBoostClassifiers(const std::vector<cv:
 	doorway_boost_.save(filename_doorway.c_str(), "boost");
 #else
 	// Train a boost classifier
-	doorway_boost_->create();
+	doorway_boost_ = cv::ml::Boost::create();
 	doorway_boost_->setBoostType(cv::ml::Boost::DISCRETE);
 	doorway_boost_->setWeakCount(number_of_classifiers_);
 	doorway_boost_->setWeightTrimRate(0);
@@ -1228,19 +1228,22 @@ void VoronoiRandomFieldSegmentation::segmentMap(const cv::Mat& original_map, cv:
 		std::string filename_room_default = classifier_default_path + "vrf_room_boost.xml";
 		if (boost::filesystem::exists(boost::filesystem::path(filename_room)) == false)
 			boost::filesystem::copy_file(filename_room_default, filename_room);
-		loadBoost(room_boost_,filename_room);
+		//loadBoost(room_boost_,filename_room);
+		room_boost_ = cv::ml::Boost::load<cv::ml::Boost>(filename_room);
 
 		std::string filename_hallway = classifier_storage_path + "vrf_hallway_boost.xml";
 		std::string filename_hallway_default = classifier_default_path + "vrf_hallway_boost.xml";
 		if (boost::filesystem::exists(boost::filesystem::path(filename_hallway)) == false)
 			boost::filesystem::copy_file(filename_hallway_default, filename_hallway);
-		loadBoost(hallway_boost_,filename_hallway);
+		//loadBoost(hallway_boost_,filename_hallway);
+		hallway_boost_ = cv::ml::Boost::load<cv::ml::Boost>(filename_hallway);
 
 		std::string filename_doorway = classifier_storage_path + "vrf_doorway_boost.xml";
 		std::string filename_doorway_default = classifier_default_path + "vrf_doorway_boost.xml";
 		if (boost::filesystem::exists(boost::filesystem::path(filename_doorway)) == false)
 			boost::filesystem::copy_file(filename_doorway_default, filename_doorway);
-		loadBoost(doorway_boost_,filename_doorway);
+		//loadBoost(doorway_boost_,filename_doorway);
+		doorway_boost_ = cv::ml::Boost::load<cv::ml::Boost>(filename_doorway);
 
 		// set the trained-Boolean true to only load parameters once
 		trained_boost_ = true;

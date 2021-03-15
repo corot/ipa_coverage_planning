@@ -751,9 +751,21 @@ void RoomSegmentationServer::execute_segmentation_server(const ipa_building_msgs
 		//choose random color for each room
 		colors[0] = 0;
 		for(int i = 1; i <= room_centers_x_values.size(); ++i)
-			colors[i] = 20 + rand() % 81;
+			// colors[i] = 100 + rand() % 121;
+                        colors[i] = 100 + i * 20;   //  interesante... RViz usa colores vivos para valores > 100 ???  mirar el codigo, a ver que hace realmente
+
+                colors[0] = 0;    // white
+                colors[1] = 40;   // light gray
+                colors[2] = 80;   // dark gray
+                colors[3] = 120;  // green
+                colors[4] = 128;  // red
+                colors[5] = 191;  // orange
+                colors[6] = 254;  // yellow
+                colors[7] = 255;  // blue
+
 		int i=0;
-		for(int v = 0; v < indexed_map.rows; ++v)
+                for(int v = 0; v < indexed_map.rows; ++v)
+		// for(int v = indexed_map.rows - 1; v >= 0 ; --v)
 			for(int u = 0; u < indexed_map.cols; ++u, ++i)
 				segmented_grid.data[i] = colors[indexed_map.at<int>(v,u)];
 		map_pub_.publish(segmented_grid);

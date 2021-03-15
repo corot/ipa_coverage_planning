@@ -190,7 +190,7 @@ void convexSPPExplorator::getExplorationPath(const cv::Mat& room_map, std::vecto
 	// transform starting position
 	std::vector<cv::Point> starting_point_vector(1, starting_position); // opencv syntax
 	cv::transform(starting_point_vector, starting_point_vector, R);
-	cv::Point rotated_starting_position = starting_point_vector[0];
+	cv::Point rotated_starting_position = starting_position;//starting_point_vector[0];  TODO   como defiendo esto???  open issue
 
 	// ************* II. Go trough the map and discretize it. *************
 	// get cells

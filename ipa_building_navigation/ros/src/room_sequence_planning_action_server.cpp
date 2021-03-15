@@ -587,7 +587,14 @@ void RoomSequencePlanningServer::findRoomSequenceWithCheckpointsServer(const ipa
 	// publish visualization msg for RViz
 	publishSequenceVisualization(room_sequences, room_centers, cliques, goal->map_resolution, cv::Point2d(goal->map_origin.position.x, goal->map_origin.position.y));
 
-	room_sequence_with_checkpoints_server_.setSucceeded(action_result);
+        if (room_sequence_with_checkpoints_server_.isPreemptRequested())
+        {
+          room_sequence_with_checkpoints_server_.setPreempted(action_result);
+        }
+        else
+        {
+          room_sequence_with_checkpoints_server_.setSucceeded(action_result);
+        }
 
 	//garbage collection
 	action_result.checkpoints.clear();
